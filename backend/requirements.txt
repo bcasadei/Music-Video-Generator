@@ -1,0 +1,26 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.9
+
+# Audio processing
+faster-whisper==1.1.1
+librosa==0.10.2
+soundfile==0.12.1
+
+# LLM
+ollama==0.3.3
+httpx==0.27.0
+
+# ComfyUI client
+websockets==12.0
+aiofiles==24.1.0
+
+# Video assembly
+ffmpeg-python==0.2.0
+
+# Database
+sqlmodel==0.0.21
+
+# Utilities
+pydantic==2.8.0
+python-dotenv==1.0.1

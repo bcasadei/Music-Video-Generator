@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Video Generator — Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            surface: { 900: '#0a0a0f', 800: '#111118', 700: '#1a1a24', 600: '#22222f', 500: '#2e2e3e' },
+            accent: { DEFAULT: '#7c5cfc', dim: '#4a3a96', glow: 'rgba(124,92,252,0.15)' },
+            muted: '#4a4a6a',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    body { background-color: #0a0a0f; }
+
+    .section-card { background: #111118; border: 1px solid #22222f; border-radius: 12px; }
+    .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.15em; color: #4a4a6a; text-transform: uppercase; }
+
+    .dropzone { border: 1.5px dashed #2e2e3e; border-radius: 10px; transition: all 0.2s; cursor: pointer; }
+    .dropzone:hover { border-color: #7c5cfc; background: rgba(124,92,252,0.05); }
+
+    .preset-card { background: #1a1a24; border: 1.5px solid #22222f; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+    .preset-card:hover, .preset-card.active { border-color: #7c5cfc; box-shadow: 0 0 12px rgba(124,92,252,0.2); }
+
+    .style-chip { background: #1a1a24; border: 1.5px solid #22222f; border-radius: 8px; cursor: pointer; transition: all 0.2s; font-size: 12px; padding: 5px 12px; color: #8888aa; }
+    .style-chip:hover, .style-chip.active { border-color: #7c5cfc; color: #c4b5fd; background: rgba(124,92,252,0.08); }
+
+    .btn-primary { background: linear-gradient(135deg, #7c5cfc 0%, #5a3fd4 100%); border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 20px rgba(124,92,252,0.3); color: white; padding: 10px 20px; cursor: pointer; }
+    .btn-primary:hover { box-shadow: 0 6px 28px rgba(124,92,252,0.5); transform: translateY(-1px); }
+
+    .btn-secondary { background: #1a1a24; border: 1.5px solid #2e2e3e; border-radius: 8px; font-size: 13px; color: #8888aa; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { border-color: #4a4a6a; color: #c4b5fd; }
+
+    .btn-success { background: rgba(34,197,94,0.12); border: 1.5px solid rgba(34,197,94,0.3); border-radius: 8px; font-size: 13px; color: #4ade80; padding: 8px 16px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
+    .btn-success:hover { background: rgba(34,197,94,0.2); }
+
+    .slider-track { -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px; background: linear-gradient(to right, #7c5cfc 70%, #2e2e3e 70%); outline: none; }
+    .slider-track::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #7c5cfc; cursor: pointer; box-shadow: 0 0 8px rgba(124,92,252,0.6); }
+
+    .progress-bar-fill { background: linear-gradient(90deg, #7c5cfc, #a78bfa); border-radius: 4px; }
+
+    .waveform-container { display: flex; align-items: flex-end; gap: 2px; height: 40px; }
+    .waveform-bar { border-radius: 2px; flex: 1; min-width: 2px; }
+
+    select, input[type="text"] { background: #1a1a24; border: 1.5px solid #22222f; border-radius: 8px; color: #c4b5fd; padding: 6px 10px; font-size: 13px; outline: none; }
+    select:focus, input[type="text"]:focus { border-color: #7c5cfc; }
+    input[type="text"]::placeholder { color: #4a4a6a; }
+    input[type="text"] { width: 100%; padding: 7px 12px; }
+
+    .bpm-badge { background: rgba(124,92,252,0.12); border: 1px solid rgba(124,92,252,0.3); border-radius: 6px; color: #a78bfa; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 3px 10px; }
+
+    .segment-marker { position: absolute; top: 0; bottom: 0; width: 2px; background: #7c5cfc; opacity: 0.6; }
+    .segment-active { position: absolute; top: 0; bottom: 0; background: rgba(124,92,252,0.15); border: 1px solid rgba(124,92,252,0.4); border-radius: 3px; }
+
+    /* Clip queue cards */
+    .clip-card { background: #1a1a24; border: 1.5px solid #22222f; border-radius: 10px; transition: all 0.2s; cursor: grab; }
+    .clip-card:hover { border-color: #4a4a6a; }
+    .clip-card.approved { border-color: rgba(34,197,94,0.4); }
+
+    .assemble-btn { background: linear-gradient(135deg, #059669 0%, #047857 100%); border-radius: 8px; font-weight: 600; font-size: 14px; transition: all 0.2s; box-shadow: 0 4px 20px rgba(5,150,105,0.3); color: white; padding: 10px 20px; cursor: pointer; }
+    .assemble-btn:hover { box-shadow: 0 6px 28px rgba(5,150,105,0.5); transform: translateY(-1px); }
+
+    .clip-preview { aspect-ratio: 16/9; border-radius: 6px; background: linear-gradient(135deg, #1a1a2e, #0a0a1a); overflow: hidden; position: relative; }
+
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #7c5cfc; animation: pulse 1.5s infinite; display: inline-block; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .generating-overlay { position: absolute; inset: 0; background: rgba(10,10,15,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border-radius: 6px; }
+
+    .tab-btn { font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; color: #4a4a6a; transition: all 0.2s; }
+    .tab-btn.active { background: rgba(124,92,252,0.12); color: #a78bfa; }
+
+    .divider { border: none; border-top: 1px solid #1a1a24; margin: 0; }
+
+    .drag-handle { color: #2e2e3e; cursor: grab; font-size: 16px; line-height: 1; }
+
+    .audio-segment-selector { position: relative; background: #1a1a24; border: 1.5px solid #22222f; border-radius: 8px; padding: 10px 12px; }
+  </style>
+</head>
+<body class="min-h-screen text-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="flex items-center justify-between px-6 py-4" style="border-bottom: 1px solid #1a1a24;">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, #7c5cfc, #5a3fd4);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+      <span class="font-semibold text-sm tracking-wide text-gray-200">MusicVid</span>
+      <span class="text-xs px-2 py-0.5 rounded" style="background:#1a1a24; color:#4a4a6a; border:1px solid #2e2e3e;">v0.1</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-xs" style="color:#4a4a6a;">ComfyUI <span style="color:#4ade80;">●</span> Connected</span>
+      <button class="tab-btn active">Clip Builder</button>
+      <button class="tab-btn">History</button>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-8 space-y-5">
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ZONE 1: CLIP BUILDER                        -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <span class="section-label">Clip Builder</span>
+        <span class="text-xs px-2 py-0.5 rounded font-mono" style="background:rgba(124,92,252,0.1); color:#7c5cfc; border:1px solid rgba(124,92,252,0.2);">Clip 4</span>
+      </div>
+
+      <!-- CHARACTER + SCENE side by side -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+
+        <!-- CHARACTER -->
+        <div class="section-card p-4">
+          <span class="section-label block mb-3">Character</span>
+          <div class="grid grid-cols-5 gap-2 mb-3">
+            <div class="preset-card p-1.5 flex flex-col items-center gap-1.5">
+              <div class="w-full aspect-square rounded-md flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#2e1a4a,#1a0e2e);">🧝‍♀️</div>
+              <span class="text-xs" style="color:#8888aa; font-size:9px;">Lyra</span>
+            </div>
+            <div class="preset-card active p-1.5 flex flex-col items-center gap-1.5">
+              <div class="w-full aspect-square rounded-md flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#1a2e1a,#0e1a0e);">🤖</div>
+              <span class="text-xs" style="color:#c4b5fd; font-size:9px;">Axiom</span>
+            </div>
+            <div class="preset-card p-1.5 flex flex-col items-center gap-1.5">
+              <div class="w-full aspect-square rounded-md flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#2e2a1a,#1a160e);">🧙</div>
+              <span class="text-xs" style="color:#8888aa; font-size:9px;">Marek</span>
+            </div>
+            <div class="preset-card p-1.5 flex flex-col items-center gap-1.5">
+              <div class="w-full aspect-square rounded-md flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#2e1a1a,#1a0e0e);">🦸</div>
+              <span class="text-xs" style="color:#8888aa; font-size:9px;">Vex</span>
+            </div>
+            <div class="dropzone flex flex-col items-center justify-center gap-1" style="min-height:52px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4a4a6a" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <span style="color:#4a4a6a; font-size:9px;">Upload</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs whitespace-nowrap" style="color:#4a4a6a;">Strength</span>
+            <input type="range" class="slider-track flex-1" min="0" max="100" value="75" />
+            <span class="font-mono text-xs" style="color:#a78bfa;">0.75</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs whitespace-nowrap" style="color:#4a4a6a;">Trigger</span>
+            <input type="text" value="axiombot" style="flex:1;" />
+          </div>
+        </div>
+
+        <!-- SCENE -->
+        <div class="section-card p-4">
+          <span class="section-label block mb-3">Scene Image</span>
+          <!-- Scene uploaded state -->
+          <div class="relative mb-3" style="aspect-ratio:16/9; border-radius:8px; overflow:hidden; background:linear-gradient(135deg, #1a0e2e, #0e1a2e);">
+            <div class="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🌃</div>
+            <div class="absolute bottom-2 right-2">
+              <button class="btn-secondary" style="padding:4px 10px; font-size:11px;">Change</button>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs whitespace-nowrap" style="color:#4a4a6a;">img2img</span>
+            <input type="range" class="slider-track flex-1" min="0" max="100" value="60" />
+            <span class="font-mono text-xs" style="color:#a78bfa;">0.60</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AUDIO SEGMENT + STYLE -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+
+        <!-- AUDIO SEGMENT -->
+        <div class="section-card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <span class="section-label">Audio Segment</span>
+            <span class="bpm-badge">BPM: 124</span>
+          </div>
+
+          <!-- Waveform with segment highlight -->
+          <div class="relative mb-3" style="height:48px;">
+            <div class="waveform-container w-full h-full" id="waveform"></div>
+            <!-- active segment overlay -->
+            <div class="segment-active" style="left:45%; width:18%;"></div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 flex-1">
+              <span class="text-xs" style="color:#4a4a6a;">Start</span>
+              <input type="text" value="1:02" style="width:60px; text-align:center;" />
+            </div>
+            <div class="flex items-center gap-2 flex-1">
+              <span class="text-xs" style="color:#4a4a6a;">End</span>
+              <input type="text" value="1:16" style="width:60px; text-align:center;" />
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs" style="color:#4a4a6a;">Cut</span>
+              <select style="padding:5px 8px;">
+                <option>2 bars</option>
+                <option>4 bars</option>
+                <option>Beat</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- STYLE -->
+        <div class="section-card p-4">
+          <span class="section-label block mb-3">Style</span>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="style-chip">Dalí Dream</span>
+            <span class="style-chip active">Neon Nights</span>
+            <span class="style-chip">Cinematic</span>
+            <span class="style-chip">Retro</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xs" style="color:#4a4a6a;">Res</span>
+              <select><option>1080p</option><option>720p</option></select>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs" style="color:#4a4a6a;">FPS</span>
+              <select><option>24</option><option>30</option></select>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs" style="color:#4a4a6a;">Trans</span>
+              <select><option>Dissolve</option><option>Cut</option><option>Fade</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERATE CLIP + PREVIEW -->
+      <div class="section-card p-4">
+        <div class="grid grid-cols-2 gap-6">
+
+          <!-- Left: generate controls -->
+          <div class="flex flex-col justify-between">
+            <div>
+              <span class="section-label block mb-2">Preview</span>
+              <p class="text-xs mb-4" style="color:#4a4a6a; line-height:1.6;">Generate this clip to preview before adding to your queue. Tweak settings and regenerate as many times as needed.</p>
+            </div>
+            <div class="space-y-2">
+              <button class="btn-primary w-full flex items-center justify-center gap-2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                Generate Clip
+              </button>
+              <div class="grid grid-cols-2 gap-2">
+                <button class="btn-secondary flex items-center justify-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+                  Regenerate
+                </button>
+                <button class="btn-success flex items-center justify-center gap-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  Add to Queue
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: clip preview -->
+          <div>
+            <div class="clip-preview">
+              <!-- Generating state -->
+              <div class="generating-overlay">
+                <div class="status-dot"></div>
+                <span class="text-xs" style="color:#a78bfa;">Generating…</span>
+                <div class="w-24 h-1 rounded-full" style="background:#2e2e3e;">
+                  <div class="progress-bar-fill h-full rounded-full" style="width:62%;"></div>
+                </div>
+                <span class="font-mono text-xs" style="color:#4a4a6a;">~1m 20s</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- ZONE 2: CLIP QUEUE                          -->
+    <!-- ═══════════════════════════════════════════ -->
+
+    <div>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <span class="section-label">Clip Queue</span>
+          <span class="text-xs px-2 py-0.5 rounded" style="background:#1a1a24; color:#4a4a6a; border:1px solid #2e2e3e;">3 clips · ~42 sec</span>
+        </div>
+        <button class="assemble-btn flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Assemble MP4
+        </button>
+      </div>
+
+      <div class="section-card p-4">
+        <div class="space-y-3">
+
+          <!-- Clip 1 -->
+          <div class="clip-card approved p-3 flex items-center gap-4">
+            <div class="drag-handle select-none">⠿</div>
+            <div class="clip-preview w-28 flex-shrink-0" style="aspect-ratio:16/9; background:linear-gradient(135deg,#2e1a4a,#0a0a1a);">
+              <div class="w-full h-full flex items-center justify-center text-2xl opacity-40">🌌</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-medium" style="color:#e2e8f0;">Clip 1</span>
+                <span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); font-size:10px;">Approved</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs" style="color:#4a4a6a;">
+                <span>🤖 Axiom</span>
+                <span>Neon Nights</span>
+                <span>0:00 – 0:14</span>
+                <span>1080p · 24fps</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button class="btn-secondary" style="padding:5px 10px; font-size:11px;">Edit</button>
+              <button style="background:none; border:none; color:#4a4a6a; cursor:pointer; padding:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Clip 2 -->
+          <div class="clip-card approved p-3 flex items-center gap-4">
+            <div class="drag-handle select-none">⠿</div>
+            <div class="clip-preview w-28 flex-shrink-0" style="background:linear-gradient(135deg,#1a2e1a,#0a1a0a);">
+              <div class="w-full h-full flex items-center justify-center text-2xl opacity-40">🌿</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-medium" style="color:#e2e8f0;">Clip 2</span>
+                <span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); font-size:10px;">Approved</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs" style="color:#4a4a6a;">
+                <span>🤖 Axiom</span>
+                <span>Cinematic</span>
+                <span>0:14 – 0:28</span>
+                <span>1080p · 24fps</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button class="btn-secondary" style="padding:5px 10px; font-size:11px;">Edit</button>
+              <button style="background:none; border:none; color:#4a4a6a; cursor:pointer; padding:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Clip 3 -->
+          <div class="clip-card approved p-3 flex items-center gap-4">
+            <div class="drag-handle select-none">⠿</div>
+            <div class="clip-preview w-28 flex-shrink-0" style="background:linear-gradient(135deg,#2e2a1a,#1a160e);">
+              <div class="w-full h-full flex items-center justify-center text-2xl opacity-40">🏙️</div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-medium" style="color:#e2e8f0;">Clip 3</span>
+                <span class="text-xs px-1.5 py-0.5 rounded" style="background:rgba(34,197,94,0.1); color:#4ade80; border:1px solid rgba(34,197,94,0.2); font-size:10px;">Approved</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs" style="color:#4a4a6a;">
+                <span>🤖 Axiom</span>
+                <span>Neon Nights</span>
+                <span>0:28 – 0:42</span>
+                <span>1080p · 24fps</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <button class="btn-secondary" style="padding:5px 10px; font-size:11px;">Edit</button>
+              <button style="background:none; border:none; color:#4a4a6a; cursor:pointer; padding:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Add next clip CTA -->
+          <div class="flex items-center gap-3 pt-1">
+            <div class="flex-1 h-px" style="background:#22222f;"></div>
+            <button class="btn-secondary flex items-center gap-2" style="font-size:12px; padding:6px 14px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Clip
+            </button>
+            <div class="flex-1 h-px" style="background:#22222f;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- MP3 GLOBAL (load once, reference segments per clip) -->
+    <div class="section-card p-4">
+      <div class="flex items-center justify-between">
+        <span class="section-label">Song</span>
+        <span class="text-xs font-mono" style="color:#4a4a6a;">neon_echoes.mp3 · 3:42</span>
+      </div>
+      <div class="flex items-center gap-4 mt-3">
+        <div class="waveform-container flex-1" id="global-waveform"></div>
+        <button class="btn-secondary" style="font-size:11px; padding:5px 10px; white-space:nowrap;">Change Song</button>
+      </div>
+      <div class="flex items-center gap-2 mt-2">
+        <!-- clip segment markers visual -->
+        <div class="relative flex-1 h-2 rounded-full" style="background:#1a1a24;">
+          <div class="absolute h-full rounded-full" style="left:0%; width:15%; background:rgba(124,92,252,0.5);"></div>
+          <div class="absolute h-full rounded-full" style="left:16%; width:15%; background:rgba(124,92,252,0.4);"></div>
+          <div class="absolute h-full rounded-full" style="left:32%; width:15%; background:rgba(124,92,252,0.3);"></div>
+          <div class="absolute h-full rounded-full" style="left:48%; width:5%; background:rgba(124,92,252,0.15); border:1px dashed rgba(124,92,252,0.4);"></div>
+        </div>
+        <span class="text-xs font-mono" style="color:#4a4a6a; white-space:nowrap;">42s / 3:42 covered</span>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    function buildWaveform(id, count, highlight) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const heights = Array.from({length: count}, () => 20 + Math.random() * 80);
+      el.innerHTML = heights.map((h, i) => {
+        const pct = i / count;
+        const isHighlight = highlight && pct >= 0.45 && pct <= 0.63;
+        const color = isHighlight ? '#7c5cfc' : (h > 65 ? '#3a3a5a' : '#2e2e3e');
+        return `<div class="waveform-bar" style="height:${h}%; background:${color};"></div>`;
+      }).join('');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      buildWaveform('waveform', 60, true);
+      buildWaveform('global-waveform', 80, false);
+    });
+  </script>
+</body>
+</html>
