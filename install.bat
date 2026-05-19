@@ -1,37 +1,48 @@
 @echo off
 setlocal enabledelayedexpansion
-title MusicVid — Setup
+title MusicVid - Setup
 
 echo.
-echo  ╔══════════════════════════════════════╗
-echo  ║       MusicVid — First-time Setup    ║
-echo  ╚══════════════════════════════════════╝
+echo  ==========================================
+echo   MusicVid -- First-time Setup
+echo  ==========================================
 echo.
 
-REM ── Prerequisites check ────────────────────────────────────────────────────
-python --version >nul 2>&1
-if errorlevel 1 (
+REM ── Find Python (try "python" then "py" launcher) ───────────────────────────
+set PYTHON=
+where python >nul 2>&1
+if not errorlevel 1 ( set PYTHON=python )
+
+if "!PYTHON!"=="" (
+    where py >nul 2>&1
+    if not errorlevel 1 ( set PYTHON=py )
+)
+
+if "!PYTHON!"=="" (
     echo  [ERROR] Python not found.
     echo          Install Python 3.11+ from https://www.python.org/downloads/
     echo          Make sure to tick "Add Python to PATH" during install.
     pause & exit /b 1
 )
+echo  [OK] Python found: !PYTHON!
 
-git --version >nul 2>&1
+REM ── Git ─────────────────────────────────────────────────────────────────────
+where git >nul 2>&1
 if errorlevel 1 (
     echo  [ERROR] Git not found.
     echo          Install Git from https://git-scm.com/download/win
     pause & exit /b 1
 )
+echo  [OK] Git found.
 
-node --version >nul 2>&1
+REM ── Node ─────────────────────────────────────────────────────────────────────
+where node >nul 2>&1
 if errorlevel 1 (
     echo  [ERROR] Node.js not found.
     echo          Install Node.js 20+ from https://nodejs.org/
     pause & exit /b 1
 )
-
-echo  [OK] Python, Git and Node.js found.
+echo  [OK] Node.js found.
 echo.
 
 REM ── Frontend ────────────────────────────────────────────────────────────────
@@ -46,7 +57,7 @@ REM ── Backend ────────────────────�
 echo  [2/5] Installing backend dependencies...
 cd backend
 if not exist venv (
-    python -m venv venv
+    !PYTHON! -m venv venv
 )
 call venv\Scripts\pip install -q -r requirements.txt
 if errorlevel 1 ( echo  [ERROR] pip install failed. & pause & exit /b 1 )
@@ -66,9 +77,9 @@ if not exist comfyui (
 if not exist comfyui\venv (
     echo        Creating ComfyUI Python environment...
     cd comfyui
-    python -m venv venv
+    !PYTHON! -m venv venv
 
-    echo        Installing PyTorch (CUDA 12.8 — for RTX 4000/5000 series)...
+    echo        Installing PyTorch (CUDA 12.8 -- for RTX 4000/5000 series)...
     call venv\Scripts\pip install -q torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
     if errorlevel 1 (
         echo        cu128 failed, trying cu124...
@@ -120,20 +131,18 @@ mkdir comfyui\models\loras            2>nul
 mkdir comfyui\models\checkpoints      2>nul
 echo        Done.
 
-REM ── Summary ─────────────────────────────────────────────────────────────────
 echo.
-echo  ╔══════════════════════════════════════════════════════════════════════╗
-echo  ║  Setup complete!                                                     ║
-echo  ║                                                                      ║
-echo  ║  Next: download your models and place them in:                       ║
-echo  ║    comfyui\models\diffusion_models\   ← Z-Image + LTX 2.3 UNETs    ║
-echo  ║    comfyui\models\gguf\               ← GGUF variants               ║
-echo  ║    comfyui\models\vae\                ← Flux VAE + LTX VAEs         ║
-echo  ║    comfyui\models\text_encoders\      ← Qwen CLIP + Gemma + proj    ║
-echo  ║    comfyui\models\loras\              ← distill LoRA + char LoRAs   ║
-echo  ║                                                                      ║
-echo  ║  Then run:  cd frontend  ^&^&  npm run dev                            ║
-echo  ║                                                                      ║
-echo  ╚══════════════════════════════════════════════════════════════════════╝
+echo  ==========================================
+echo   Setup complete!
+echo.
+echo   Next: place your models in comfyui\models\
+echo     diffusion_models\  -- Z-Image + LTX 2.3 UNETs
+echo     gguf\              -- GGUF variants
+echo     vae\               -- Flux VAE + LTX VAEs
+echo     text_encoders\     -- Qwen CLIP + Gemma + proj
+echo     loras\             -- distill LoRA + char LoRAs
+echo.
+echo   Then run:  cd frontend  &&  npm run dev
+echo  ==========================================
 echo.
 pause
