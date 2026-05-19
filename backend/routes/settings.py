@@ -52,7 +52,7 @@ def scan_models(root: str):
         for folder in folders:
             p = base / folder
             if p.is_dir():
-                for f in sorted(p.iterdir()):
+                for f in sorted(p.rglob("*")):
                     if f.is_file() and f.suffix.lower() in (".safetensors", ".gguf", ".pt", ".bin") and f.name not in seen:
                         result[key].append(f.name)
                         seen.add(f.name)

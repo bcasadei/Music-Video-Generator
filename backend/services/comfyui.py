@@ -109,6 +109,12 @@ async def run_clip_workflow(
     template = _load_template(img_fmt)
     workflow  = _inject(template, values)
 
+    # If no distill LoRA, remove node 13 and wire CFGGuider directly to the LTX UNET
+    if not vid.get("distill_lora"):
+        workflow.pop("13", None)
+        if "27" in workflow:
+            workflow["27"]["inputs"]["model"] = ["12", 0]
+
     async with httpx.AsyncClient() as client:
         resp = await client.post(
             f"{url}/prompt",
