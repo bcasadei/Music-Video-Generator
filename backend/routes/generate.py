@@ -6,6 +6,8 @@ from services.ffmpeg import assemble_video
 import jobs
 import asyncio
 import json
+import traceback
+import glob
 
 router = APIRouter()
 
@@ -111,11 +113,16 @@ async def _run_clip_job(job_id: str, req: ClipRequest):
         async def _progress(pct: int, msg: str):
             await jobs.update(job_id, progress=pct, message=msg)
 
+        matches = glob.glob(f"uploads/audio/{req.file_id}.*")
+        if not matches:
+            raise FileNotFoundError(f"Audio file not found for file_id: {req.file_id}")
+        audio_path = matches[0]
+
         clip_path = await run_clip_workflow(
             prompt=prompt,
             lora_name=req.lora_name,
             lora_strength=req.lora_strength,
-            audio_path=f"uploads/audio/{req.file_id}",
+            audio_path=audio_path,
             segment_start=req.segment_start,
             segment_end=req.segment_end,
             resolution=req.resolution,
@@ -127,4 +134,5 @@ async def _run_clip_job(job_id: str, req: ClipRequest):
         await jobs.update(job_id, status="done", progress=100, message="Done.", clip_path=clip_path)
 
     except Exception as exc:
+        traceback.print_exc()
         await jobs.update(job_id, status="error", message="Generation failed.", error=str(exc))

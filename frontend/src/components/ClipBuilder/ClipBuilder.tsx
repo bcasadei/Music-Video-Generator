@@ -20,16 +20,7 @@ export function ClipBuilder() {
     setStatus('generating')
     setProgress(0)
 
-    const jobId = uuidv4()
-    const ws = new WebSocket(`ws://${window.location.hostname}:8000/generate/ws/${jobId}`)
-    ws.onmessage = (e) => {
-      const data = JSON.parse(e.data)
-      if (data.progress) setProgress(data.progress)
-      if (data.clip_path) { setPreview(data.clip_path); setStatus('done') }
-      if (data.error) setStatus('error')
-    }
-
-    await axios.post('/api/generate/clip', {
+    const { data: jobData } = await axios.post('/api/generate/clip', {
       file_id:          audio.file_id,
       segment_start:    builderConfig.segment.start,
       segment_end:      builderConfig.segment.end,
@@ -44,6 +35,15 @@ export function ClipBuilder() {
       transition:       builderConfig.transition ?? 'dissolve',
       global_context:   globalContext,
     })
+
+    const ws = new WebSocket(`ws://${window.location.hostname}:8000/generate/ws/${jobData.job_id}`)
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data)
+      if (msg.progress) setProgress(msg.progress)
+      if (msg.clip_path) { setPreview(`/api/download?path=${encodeURIComponent(msg.clip_path)}`); setStatus('done') }
+      if (msg.status === 'error') setStatus('error')
+    }
+    ws.onerror = () => setStatus('error')
   }
 
   const handleApprove = () => {
@@ -158,6 +158,7 @@ export function ClipBuilder() {
               </div>
             )}
             {status === 'idle' && <span className="text-[14px] text-[#b8b8d0]">Preview appears here</span>}
+            {status === 'error' && <span className="text-[14px] text-red-400">Generation failed — check terminal for details</span>}
             {status === 'done' && preview && (
               <video src={preview} controls className="w-full h-full object-cover" />
             )}

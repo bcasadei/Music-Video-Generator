@@ -150,7 +150,17 @@ async def _poll_for_output(
                 for node_output in outputs.values():
                     for key in ("videos", "gifs"):
                         if key in node_output and node_output[key]:
-                            filename = node_output[key][0]["filename"]
-                            return os.path.join(OUTPUT_DIR, filename)
+                            item      = node_output[key][0]
+                            filename  = item["filename"]
+                            subfolder = item.get("subfolder", "")
+                            params    = {"filename": filename, "type": "output"}
+                            if subfolder:
+                                params["subfolder"] = subfolder
+                            file_resp = await client.get(f"{url}/view", params=params, timeout=60)
+                            file_resp.raise_for_status()
+                            dest = os.path.join(OUTPUT_DIR, filename)
+                            with open(dest, "wb") as f:
+                                f.write(file_resp.content)
+                            return dest
 
     raise TimeoutError(f"Job {job_id} timed out after {timeout}s")
