@@ -29,6 +29,7 @@ uploads/
 outputs/
 data/
 config.json
+support/
 
 # ── OS ──────────────────────────────────────────────────────────────────────
 .DS_Store
