@@ -2,6 +2,29 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import type { AppConfig, ScannedModels } from '../../types'
 
+function autoPopulate(m: ScannedModels): { image_model: Partial<AppConfig['image_model']>; video_model: Partial<AppConfig['video_model']> } {
+  const find = (files: string[], ...terms: string[]) =>
+    files.find((f) => terms.some((t) => f.toLowerCase().includes(t))) ?? ''
+
+  const allDiffusion = [...m.diffusion_models, ...m.gguf]
+
+  return {
+    image_model: {
+      unet:  find(allDiffusion, 'z_image', 'zimage', 'z-image'),
+      clip1: find(m.text_encoders, 'qwen'),
+      vae:   find(m.vae, 'ae.safetensors') || find(m.vae, 'fluxvae', 'flux_vae') || find(m.vae, 'ae'),
+    },
+    video_model: {
+      unet:         find(allDiffusion, 'ltx'),
+      clip1:        find(m.text_encoders, 'gemma'),
+      clip2:        find(m.text_encoders, 'text_projection', 'projection', 'ltx'),
+      vae:          find(m.vae, 'video_vae', 'ltx'),
+      audio_vae:    find(m.vae, 'taeltx', 'audio_vae', 'audio'),
+      distill_lora: find(m.loras, 'distill'),
+    },
+  }
+}
+
 const DEFAULTS: AppConfig = {
   comfyui_url:  'http://localhost:8289',
   models_root:  '',
@@ -39,6 +62,12 @@ export function Settings() {
     try {
       const { data } = await axios.get('/api/settings/scan', { params: { root: cfg.models_root } })
       setModels(data)
+      const auto = autoPopulate(data)
+      setCfg((c) => ({
+        ...c,
+        image_model: { ...c.image_model, ...Object.fromEntries(Object.entries(auto.image_model).filter(([, v]) => v)) },
+        video_model: { ...c.video_model, ...Object.fromEntries(Object.entries(auto.video_model).filter(([, v]) => v)) },
+      }))
     } catch {
       setScanError('Could not scan folder — check the path and try again.')
     } finally {
@@ -148,7 +177,7 @@ export function Settings() {
           {scanError && <Status>{scanError}</Status>}
           {models && (
             <Status ok>
-              Found {models.checkpoints.length} checkpoints · {models.loras.length} LoRAs · {models.diffusion_models.length + models.gguf.length} diffusion · {models.vae.length} VAE · {models.text_encoders.length} text encoders
+              checkpoints: {models.checkpoints.length} · loras: {models.loras.length} · diffusion: {models.diffusion_models.length} · gguf: {models.gguf.length} · vae: {models.vae.length} · text_encoders: {models.text_encoders.length}
             </Status>
           )}
         </Field>
