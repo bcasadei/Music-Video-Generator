@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n ui,api,comfyui -c cyan,green,yellow \"vite\" \"cd ../backend && venv/Scripts/uvicorn main:app --reload --port 8000\" \"cd ../comfyui && venv/Scripts/python main.py --port 8289 --listen 127.0.0.1 --disable-metadata --dont-print-server\"",
+    "dev": "concurrently -n ui,api -c cyan,green \"vite\" \"cd ../backend && venv/Scripts/uvicorn main:app --reload --port 8000\"",
+    "dev:full": "concurrently -n ui,api,comfyui -c cyan,green,yellow \"vite\" \"cd ../backend && venv/Scripts/uvicorn main:app --reload --port 8000\" \"cd ../comfyui && venv/Scripts/python main.py --port 8289 --listen 127.0.0.1 --disable-metadata --dont-print-server\"",
     "dev:ui": "vite",
     "dev:api": "cd ../backend && venv/Scripts/uvicorn main:app --reload --port 8000",
     "dev:comfyui": "cd ../comfyui && venv/Scripts/python main.py --port 8289 --listen 127.0.0.1 --disable-metadata --dont-print-server",
